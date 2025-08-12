@@ -1,134 +1,44 @@
-👨‍💻 Developer Guide
-1. Overview
-This project is a Django REST Framework–based authentication system with:
+# Authentication API
 
-Custom User model (CustomUser)
+A Django REST Framework–based authentication system with email OTP verification and session-based login.
 
-Custom Token Authentication stored in sessions
+## Features
+- User signup with email OTP verification
+- Secure password storage
+- Session-based authentication (30-day expiry)
+- Who-am-I endpoint for fetching logged-in user info
+- Detailed error messages and `success` boolean responses
 
-OTP-based email verification before account creation
+---
 
-Session-based authentication that persists for 30 days
+## 🚀 Deployment Guide
 
-The system has four main API endpoints:
+### 1. Clone the Repository
+```bash
+git clone https://github.com/<your-username>/<repo-name>.git
+cd <repo-name>
+2. Create a Virtual Environment
+Project originally created with Python 3.13.5.
 
-/users/signup/ → Requests OTP
-
-/users/verification/ → Verifies OTP & creates user
-
-/users/login/ → Logs in and stores session token
-
-/users/who_am_i/ → Retrieves logged-in user data
-
-2. Project Structure
+Windows (PowerShell)
+powershell
+Copy
+Edit
+python -m venv venv
+.\venv\Scripts\activate
+macOS / Linux
 bash
 Copy
 Edit
-backend/
-├── users/
-│   ├── views.py               # API views for signup, verification, login, who_am_i
-│   ├── models.py               # CustomUser, CustomToken, VerificationTable
-│   ├── AuthenticationClass.py  # CustomAuthentication logic
-│   ├── PermissionClasses.py    # IsAuthenticated permission
-│   ├── urls.py                  # Endpoint routing
-│   └── ...
-├── manage.py
-└── ...
-3. Models
-CustomUser
-Extends AbstractBaseUser
-
-Uses username as the USERNAME_FIELD
-
-Stores email, is_Active, and is_Admin
-
-CustomToken
-Extends DRF’s Token
-
-One-to-one relation with CustomUser
-
-Used for session-based token storage
-
-VerificationTable
-Temporary table for pending signups
-
-Stores OTP and expiry timestamp
-
-4. Authentication Flow
-Signup Request (/users/signup/)
-Checks if username/email already exists.
-
-Removes any previous OTPs for the same username/email.
-
-Generates a 6-digit OTP and expiry time (10 minutes).
-
-Saves to VerificationTable.
-
-Sends OTP via email using Django’s send_mail().
-
-Verification (/users/verification/)
-Validates email, username, password, otp.
-
-Checks if verification record exists.
-
-Ensures OTP hasn’t expired.
-
-Creates CustomUser, sets password.
-
-Creates CustomToken for the user.
-
-Deletes the verification record.
-
-Login (/users/login/)
-Validates username and password.
-
-If valid, retrieves/creates a CustomToken.
-
-Stores token in request.session.
-
-Who Am I (/users/who_am_i/)
-Uses CustomAuthentication to check for token in session.
-
-If authenticated, returns username & email.
-
-5. Authentication & Permissions
-CustomAuthentication
-Checks for "token" in request.session.
-
-Retrieves corresponding CustomToken and returns (user, None) if valid.
-
-Returns None if no token or invalid.
-
-IsAuthenticated
-Returns True if request.user is authenticated.
-
-Blocks request otherwise.
-
-6. Session Handling
-Tokens are stored in Django sessions, meaning:
-
-Server-side session data is stored in your configured session backend (DB, cache, file).
-
-Clients maintain session state using cookies.
-
-Default session expiry is 30 days (can be changed in settings.py via SESSION_COOKIE_AGE).
-
-7. Email Sending
-Uses Django’s built-in send_mail() function.
-
-Requires SMTP configuration in settings.py:
-
-python
+python3 -m venv venv
+source venv/bin/activate
+3. Install Dependencies
+bash
 Copy
 Edit
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get("Email_User")
-EMAIL_HOST_PASSWORD = os.environ.get("Email_Pass")
-8. Environment Variables
-All sensitive values are stored in .env.local:
+pip install -r requirements.txt
+4. Set Up Environment Variables
+Create a file named .env.local in the root directory:
 
 ini
 Copy
@@ -136,37 +46,88 @@ Edit
 Email_User=your_host_email_id
 Email_Pass="your_google_app_password"
 SECURITY_KEY=your_django_secret_key
-9. Error Handling
-All error responses follow:
+5. Run the Server
+Windows
+powershell
+Copy
+Edit
+python backend/manage.py runserver
+macOS / Linux
+bash
+Copy
+Edit
+python3 backend/manage.py runserver
+📡 API Usage
+1. Request OTP for Signup
+Endpoint: POST /users/signup/
+Body (JSON):
 
 json
 Copy
 Edit
 {
-  "success": false,
-  "detail": "Error message"
+  "username": "example_user",
+  "email": "example@example.com"
 }
-Success responses:
+Response:
+
+success: true if OTP sent
+
+success: false with detail if error
+
+2. Verify OTP & Create Account
+Endpoint: POST /users/signup/
+Body (JSON):
 
 json
 Copy
 Edit
 {
-  "success": true,
-  "detail": "Optional message"
+  "username": "example_user",
+  "email": "example@example.com",
+  "password": "secure_password",
+  "otp": "123456"
 }
-10. Extending the System
-Custom User Fields: Add more fields to CustomUser and run migrations.
+3. Login
+Endpoint: POST /users/login/
+Body (JSON):
 
-Different Email Providers: Change EMAIL_HOST and credentials.
+json
+Copy
+Edit
+{
+  "username": "example_user",
+  "password": "secure_password"
+}
+Notes:
 
-Token Expiry: Implement expiry by adding a timestamp field in CustomToken.
+Stores user token in session
 
-Switch to JWT: Replace CustomAuthentication with DRF’s JWTAuthentication.
+Session ID stored in cookies for persistent login (expires after 30 days)
 
-11. Known Limitations
-OTP verification is tied to both email and username — if either changes, verification fails.
+4. Who Am I
+Endpoint: GET /users/who_a_i/
+Response:
 
-OTPs are deleted after verification but not after expiry unless requested.
+403 if not logged in
 
-Login endpoint returns 404 for both non-existent users and wrong passwords to prevent user enumeration.
+JSON object with username and email if logged in:
+
+json
+Copy
+Edit
+{
+  "username": "example_user",
+  "email": "example@example.com"
+}
+👨‍💻 Developer Guide
+Framework: Django, Django REST Framework
+
+Auth Method: Session-based
+
+Email Service: SMTP with Google App Password
+
+Environment Variables: .env.local for sensitive credentials
+
+Security: All sensitive values loaded from environment variables
+
