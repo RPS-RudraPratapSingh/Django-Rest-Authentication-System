@@ -1,0 +1,4 @@
+pyvenv/
+.vscode/
+backend/db.sqlite3
+*.local
