@@ -81,6 +81,9 @@ def verification(request):
     if current_datetime>verification_qs[0].expiry:
         return Response({"success":False,"detail":"OTP expired"}, status=status.HTTP_410_GONE)
     
+    if not verification_qs[0].otp == request.data["otp"]:
+        return Response({"success":False, "detail":"wrong otp"}, status=status.HTTP_401_UNAUTHORIZED)
+    
     
     # creating the user and setting up the password and creating and authtoken
     user = CustomUser(username=request.data["username"], email=request.data["email"])
@@ -121,7 +124,7 @@ def login(request):
         token,created = CustomToken.objects.get_or_create(user = user)
         request.session["token"] = token.key
 
-        return Response({"success":True})        
+        return Response({"success":True})           
 
 
 @api_view(["GET"])
