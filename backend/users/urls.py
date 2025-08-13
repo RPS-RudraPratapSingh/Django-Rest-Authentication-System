@@ -5,5 +5,5 @@ urlpatterns = [
     path("signup/",signup_request),
     path("verification/", verification),
     path("login/", login),
-    path("who_am_i",who_am_i),
+    path("who_am_i/",who_am_i),
 ]
