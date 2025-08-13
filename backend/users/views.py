@@ -118,7 +118,7 @@ def login(request):
         
 
         # setting up the user token in session id for the session
-        token,created = CustomToken.object.get_or_create(user = user)
+        token,created = CustomToken.objects.get_or_create(user = user)
         request.session["token"] = token.key
 
         return Response({"success":True})        
